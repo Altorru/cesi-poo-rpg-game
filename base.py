@@ -102,7 +102,7 @@ class Character(ABC):
         self.notify_observers("heal", amount)
 
     @abstractmethod
-    def perform_turn(self, target):
+    def perform_turn(self, targets):
         pass
 
     def add_observer(self, observer):
@@ -121,10 +121,11 @@ class Enemy(Character):
     def __init__(self, name, type, pv=100, damage=10, exp=0):
         super().__init__(name, type, pv, damage, exp)
 
-    def perform_turn(self, target):
+    def perform_turn(self, targets):
         action = random.choice(["attack", "heal"])
         if action == "attack":
             weapon = random.choice([item for item in self.inventory if isinstance(item, Weapon)] + [None])
+            target = random.choice(targets)
             self.attack(target, weapon)
         else:
             self.heal(15)
@@ -132,9 +133,9 @@ class Enemy(Character):
 class Boss(Enemy):
     """Classe pour les boss de fin d'exploration"""
     def __init__(self, name, hero):
-        exp = int(hero.exp * 1.5)
-        pv = int(hero.max_pv * 1.8)
-        damage = int(hero.damage * 1.3)
+        exp = int(hero.exp * 1.1)
+        pv = int(hero.max_pv * 1.2)
+        damage = int(hero.damage * 1)
         super().__init__(name, "boss", pv, damage, exp)
         
         # Le boss a toujours une bonne arme
@@ -144,11 +145,12 @@ class Boss(Enemy):
         # Le boss est plus résistant
         self.upgrades["pv"] = int(pv * 0.3)
     
-    def perform_turn(self, target):
+    def perform_turn(self, targets):
         """Le boss est plus agressif"""
         action = random.choices(["attack", "heal"], weights=[0.8, 0.2])[0]
         if action == "attack":
             weapon = random.choice([item for item in self.inventory if isinstance(item, Weapon)] + [None])
+            target = random.choice(targets)
             self.attack(target, weapon)
             # Le boss a une chance de double attaque
             if random.random() > 0.7:
@@ -161,11 +163,13 @@ class Hero(Character):
     def __init__(self, name, type, pv=100, damage=10):
         super().__init__(name, type, pv, damage)
 
-    def perform_turn(self, target):
+    def perform_turn(self, targets):
         possibilities = ["attack", "pass", "heal", "exit game"]
         weapons = [item for item in self.inventory if isinstance(item, Weapon)]
         choice = select(f"{self.name}'s turn! Choose an action:", choices=possibilities).ask()
         if choice == possibilities[0]:  # attack
+            targetted_enemy = select("Choose a target:", choices=[f"{enemy.name} (HP: {enemy._pv}/{enemy.max_pv})" for enemy in targets]).ask()
+            target = next(enemy for enemy in targets if enemy.name in targetted_enemy)
             if weapons:
                 weapon_choices = [f"Hands (no weapon) (DMG: {self.damage})"] + [str(weapon) for weapon in weapons]
                 weapon_choice = select("Choose a weapon:", choices=weapon_choices).ask()
@@ -195,3 +199,21 @@ class Hero(Character):
         else:
             self.damage += 5
             self.notify_observers("damage_increased", self.damage)
+
+class Team:
+    def __init__(self, name):
+        self.name = name
+        self.members = []
+    
+    def add_member(self, character):
+        self.members.append(character)
+    
+    def remove_member(self, character):
+        if character in self.members:
+            self.members.remove(character)
+    
+    def is_defeated(self):
+        return all(member._pv <= 0 for member in self.members)
+    
+    def get_alive_members(self):
+        return [member for member in self.members if member._pv > 0]
