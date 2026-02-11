@@ -66,3 +66,5 @@ class GameObserver(Observer):
             else:
                 print(f"\n💀 GAME OVER! {subject.name} has been defeated!")
             print(f"   Final stats: {subject.exp} EXP | {data['battles_won']} battles won")
+        elif event_type == "no_items":
+            print("\n🛒 No items available in inventory!")

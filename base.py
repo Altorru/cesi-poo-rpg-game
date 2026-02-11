@@ -10,6 +10,22 @@ class Weapon:
     def __str__(self):
         return f"{self.name} (DMG: {self.damage})"
 
+class Consumable(ABC):
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+    
+    def __str__(self):
+        return f"{self.name} (Value: {self.value})"
+    
+    @abstractmethod
+    def use(self, character):
+        pass
+
+class HealPotion(Consumable):
+    def use(self, character):
+        character.heal(self.value)
+
 class Character(ABC):
     def __init__(self, name, type, pv=100, damage=10, exp=0):
         self._pv = pv
@@ -164,7 +180,7 @@ class Hero(Character):
         super().__init__(name, type, pv, damage)
 
     def perform_turn(self, targets):
-        possibilities = ["attack", "pass", "heal", "exit game"]
+        possibilities = ["attack", "pass", "heal", "use item", "exit game"]
         weapons = [item for item in self.inventory if isinstance(item, Weapon)]
         choice = select(f"{self.name}'s turn! Choose an action:", choices=possibilities).ask()
         if choice == possibilities[0]:  # attack
@@ -184,7 +200,17 @@ class Hero(Character):
             self.notify_observers("pass", None)
         elif choice == possibilities[2]:  # heal
             self.heal(20)
-        elif choice == possibilities[3]:  # exit game
+        elif choice == possibilities[3]:  # use item
+            consumables = [item for item in self.inventory if isinstance(item, Consumable)]
+            if not consumables:
+                self.notify_observers("no_items", None)
+                return self.perform_turn(targets)  # Go back to action selection
+            else:
+                consumable_choice = select("Choose an item to use:", choices=[str(item) for item in consumables]).ask()
+                consumable = next(item for item in consumables if str(item) == consumable_choice)
+                consumable.use(self)
+                self.inventory.remove(consumable)
+        elif choice == possibilities[4]:  # exit game
             self.notify_observers("exit_game", None)
             exit()
         else:

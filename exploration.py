@@ -1,6 +1,7 @@
 import random
 from questionary import select
 from factories import EnemyFactory, WeaponFactory, BossFactory
+from base import HealPotion
 
 
 class PathEvent:
@@ -50,6 +51,12 @@ class PathEvent:
             heal_amount = self.value or random.randint(20, 40)
             hero.heal(heal_amount)
         
+        elif self.event_type == "potion":
+            potion_value = self.value or random.randint(25, 50)
+            potion = HealPotion("Health Potion", potion_value)
+            hero.inventory.append(potion)
+            print(f"\n🧪 You found a {potion.name}! (Heals {potion_value} HP)")
+        
         return False
 
 
@@ -65,11 +72,11 @@ class Path:
         """Génère un événement aléatoire basé sur la difficulté"""
         # Probabilités selon la difficulté
         if self.difficulty == "easy":
-            weights = {"exp": 0.35, "heal": 0.25, "weapon": 0.25, "combat": 0.15}
+            weights = {"exp": 0.35, "heal": 0.15, "weapon": 0.25, "combat": 0.15, "potion": 0.3}
         elif self.difficulty == "hard":
-            weights = {"combat": 0.5, "weapon": 0.3, "exp": 0.2}
+            weights = {"combat": 0.5, "weapon": 0.3, "exp": 0.2, "potion": 0.3}
         else:  # normal
-            weights = {"combat": 0.3, "weapon": 0.25, "exp": 0.25, "heal": 0.2}
+            weights = {"combat": 0.3, "weapon": 0.25, "exp": 0.25, "heal": 0.1, "potion": 0.3}
         
         event_type = random.choices(
             list(weights.keys()),
