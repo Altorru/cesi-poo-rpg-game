@@ -1,1 +1,2 @@
 questionary==2.1.1
+pytest==9.0.2

@@ -116,6 +116,9 @@ class Character(ABC):
         if self._pv > self.max_pv:
             self._pv = self.max_pv
         self.notify_observers("heal", amount)
+    
+    def is_alive(self):
+        return self._pv > 0
 
     @abstractmethod
     def perform_turn(self, targets):
